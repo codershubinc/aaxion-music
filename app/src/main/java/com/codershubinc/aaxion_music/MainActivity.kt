@@ -11,7 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.unit.dp
 import com.codershubinc.aaxion_music.ui.components.AaxionMusicWelcomeScreen
 import com.codershubinc.aaxion_music.ui.components.LoadingScreen
@@ -44,6 +47,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(colorScheme = AmoledDarkColorScheme) {
+                val view = LocalView.current
+                if (!view.isInEditMode) {
+                    SideEffect {
+                        val window = (view.context as ComponentActivity).window
+                        window.statusBarColor = AmoledDarkColorScheme.background.toArgb()
+                        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+                    }
+                }
                 ProvideMusicController {
                     val context = LocalContext.current
                     val tokenManager = remember { TokenManager(context) }
