@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                             discovery.discoverServices { service ->
                                 discoveredService = service
                             }
-                            delay(2000)
+                            delay(200)
                             if (!initialCheckDone) {
                                 initialCheckDone = true
                                 currentScreen = if (tokenManager.isLoggedIn()) Screen.MainApp else Screen.Welcome

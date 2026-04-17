@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -31,7 +33,7 @@ fun SidebarWrapper(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(24.dp))
-                .background(Zinc900)
+                .background(AmoledBlack)
                 .padding(16.dp)
         ) {
             SidebarContent(isMobile, onCloseDrawer, onLogout)
@@ -49,12 +51,25 @@ fun SidebarContent(isMobile: Boolean, onCloseDrawer: () -> Unit, onLogout: () ->
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = "AAXION",
-            color = Color.White,
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 32.dp, start = 16.dp, top = 16.dp)
-        )
+       Row(
+           verticalAlignment = Alignment.Bottom
+       ) {
+           Text(
+               text = "AAXION",
+               color = Color.White,
+               style = MaterialTheme.typography.headlineMedium,
+               modifier = Modifier.padding(bottom = 32.dp, start = 16.dp, top = 16.dp)
+           )
+           Text(
+               text = "music",
+               color  = Color.Gray,
+               style = MaterialTheme.typography.headlineSmall.copy(
+                   fontStyle = FontStyle.Italic,
+                   fontFamily = FontFamily.Cursive
+               ),
+               modifier = Modifier.padding(bottom = 32.dp, start = 16.dp, top = 0.dp)
+           )
+       }
 
         menuItems.forEachIndexed { index, item ->
             val isSelected = index == selectedIndex
@@ -62,7 +77,7 @@ fun SidebarContent(isMobile: Boolean, onCloseDrawer: () -> Unit, onLogout: () ->
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) Zinc800 else Color.Transparent)
+                    .background(if (isSelected) Color(0xFF18181B) else Color.Transparent)
                     .clickable {
                         selectedIndex = index
                         if (isMobile) onCloseDrawer()

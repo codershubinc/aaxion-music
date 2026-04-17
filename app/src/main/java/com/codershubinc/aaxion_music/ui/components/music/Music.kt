@@ -3,26 +3,33 @@ package com.codershubinc.aaxion_music.ui.components.music
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import com.codershubinc.aaxion_music.utils.AaxionServiceInfo
+import com.codershubinc.aaxion_music.utils.TokenManager
+import com.codershubinc.aaxion_music.utils.music.FetchMusic
+import com.codershubinc.aaxion_music.utils.music.MusicTrack
 import androidx.compose.material.icons.filled.Warning
 
 val AmoledBlack = Color(0xFF000000)
-val Zinc900 = Color(0xFF18181B)
-val Zinc800 = Color(0xFF27272A)
+val Zinc800 = Color(0xFF18181B) // Subsurface/Card color
 val Zinc400 = Color(0xFFA1A1AA)
 val CyanAccent = Color(0xFF00E5FF)
 
@@ -32,6 +39,22 @@ fun MusicMainScreen(
     onLogout: () -> Unit = {},
     onRetryDiscovery: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
+    var musicList by remember { mutableStateOf<List<MusicTrack>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(serverInfo) {
+        if (serverInfo != null && serverInfo.host.isNotBlank()) {
+            isLoading = true
+            val result = FetchMusic.fetchAllMusic(serverInfo.host, serverInfo.port, tokenManager.getToken())
+            result.onSuccess {
+                musicList = it
+            }
+            isLoading = false
+        }
+    }
+
     if (serverInfo == null || serverInfo.host.isBlank()) {
         Box(
             modifier = Modifier.fillMaxSize().background(AmoledBlack),
@@ -75,9 +98,9 @@ fun MusicMainScreen(
             .background(AmoledBlack) // Root background
     ) {
         val isTablet = maxWidth >= 600.dp
+        val token = tokenManager.getToken()
         
-        if (isTablet) {
-            // Tablet/Desktop Layout: Fixed Sidebar + Main Content
+        if (isTablet) { 
             Row(modifier = Modifier.fillMaxSize()) {
                 SidebarWrapper(
                     modifier = Modifier
@@ -93,11 +116,14 @@ fun MusicMainScreen(
                         .weight(1f)
                         .fillMaxHeight(),
                     onOpenDrawer = {},
-                    showHamburger = false
+                    showHamburger = false,
+                    musicList = musicList,
+                    isLoading = isLoading,
+                    serverInfo = serverInfo,
+                    token = token
                 )
             }
-        } else {
-            // Mobile Layout: Modal Drawer
+        } else { 
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
             val scope = rememberCoroutineScope()
             
@@ -121,13 +147,20 @@ fun MusicMainScreen(
                     }
                 }
             ) {
-                MainContentWrapper(
-                    modifier = Modifier.fillMaxSize(),
-                    onOpenDrawer = {
-                        scope.launch { drawerState.open() }
-                    },
-                    showHamburger = true
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AmoledBlack)
+                ) {
+                    MainMusicContent(
+                        onOpenDrawer = { scope.launch { drawerState.open() } },
+                        showHamburger = true,
+                        musicList = musicList,
+                        isLoading = isLoading,
+                        serverInfo = serverInfo,
+                        token = token
+                    )
+                }
             }
         }
     }
@@ -137,7 +170,11 @@ fun MusicMainScreen(
 fun MainContentWrapper(
     modifier: Modifier = Modifier,
     onOpenDrawer: () -> Unit,
-    showHamburger: Boolean = false
+    showHamburger: Boolean = false,
+    musicList: List<MusicTrack>,
+    isLoading: Boolean,
+    serverInfo: AaxionServiceInfo?,
+    token: String?
 ) {
     Box(
         modifier = modifier.padding(12.dp)
@@ -146,15 +183,22 @@ fun MainContentWrapper(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(24.dp))
-                .background(Zinc900)
+                .background(AmoledBlack)
         ) {
-            MainMusicContent(onOpenDrawer, showHamburger)
+            MainMusicContent(onOpenDrawer, showHamburger, musicList, isLoading, serverInfo, token)
         }
     }
 }
 
 @Composable
-fun MainMusicContent(onOpenDrawer: () -> Unit, showHamburger: Boolean) {
+fun MainMusicContent(
+    onOpenDrawer: () -> Unit,
+    showHamburger: Boolean,
+    musicList: List<MusicTrack>,
+    isLoading: Boolean,
+    serverInfo: AaxionServiceInfo?,
+    token: String?
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         if (showHamburger) {
             IconButton(
@@ -171,14 +215,94 @@ fun MainMusicContent(onOpenDrawer: () -> Unit, showHamburger: Boolean) {
             Spacer(modifier = Modifier.height(32.dp))
         }
         
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = CyanAccent)
+            }
+        } else if (musicList.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No Music Found",
+                    color = Zinc400,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Text(
+                        text = "All Songs",
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+                items(musicList) { track ->
+                    MusicTrackItem(track, serverInfo, token)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MusicTrackItem(track: MusicTrack, serverInfo: AaxionServiceInfo?, token: String?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { /* Handle click */ }
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Thumbnail using the /files/thumbnail endpoint
+        val imageUrl = if (serverInfo != null && token != null) {
+            "http://${serverInfo.host}:${serverInfo.port}/files/thumbnail?path=${track.imagePath}&tkn=$token"
+        } else null
+
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = null,
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Zinc800),
+            contentScale = ContentScale.Crop
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Main Music Player Content",
+                text = track.title,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = track.artist,
                 color = Zinc400,
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        IconButton(onClick = { /* More options */ }) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "More",
+                tint = Zinc400
             )
         }
     }
