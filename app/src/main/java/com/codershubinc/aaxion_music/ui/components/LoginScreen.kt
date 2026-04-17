@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.codershubinc.aaxion_music.utils.AaxionServiceInfo
 import com.codershubinc.aaxion_music.utils.TokenManager
+import com.codershubinc.aaxion_music.utils.HttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -27,7 +28,8 @@ import java.net.URL
 @Composable
 fun LoginScreen(
     serverInfo: AaxionServiceInfo?,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onRetryDiscovery: () -> Unit
 ) {
     val context = LocalContext.current
     val tokenManager = remember { TokenManager(context) }
@@ -68,6 +70,22 @@ fun LoginScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onRetryDiscovery,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                Text(
+                    text = "Retry Discovery",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
             return@Column
         }
 
@@ -169,7 +187,12 @@ fun LoginScreen(
                 loginError = null
                 loginSuccess = false
                 coroutineScope.launch {
-                    val result = performLogin(serverInfo.host, serverInfo.port, username, password)
+                    val url = "http://${serverInfo.host}:${serverInfo.port}/auth/login"
+                    val payload = JSONObject().apply {
+                        put("username", username)
+                        put("password", password)
+                    }
+                    val result = HttpClient.postJson(url, payload)
                     isLoggingIn = false
                     result.fold(
                         onSuccess = { response ->
@@ -219,39 +242,6 @@ fun LoginScreen(
     }
 }
 
-suspend fun performLogin(ip: String, port: Int, user: String, pass: String): Result<String> {
-    return withContext(Dispatchers.IO) {
-        try {
-            val url = URL("http://$ip:$port/auth/login")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = 5000
-            conn.readTimeout = 5000
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Content-Type", "application/json; utf-8")
-            conn.setRequestProperty("Accept", "application/json")
-            conn.doOutput = true
-            
-            val json = JSONObject()
-            json.put("username", user)
-            json.put("password", pass)
-            
-            conn.outputStream.use { os ->
-                val input = json.toString().toByteArray(Charsets.UTF_8)
-                os.write(input, 0, input.size)
-            }
-            
-            val responseCode = conn.responseCode
-            if (responseCode in 200..299) {
-                val response = conn.inputStream.bufferedReader().use { it.readText() }
-                Result.success(response)
-            } else {
-                Result.failure(Exception("Login failed with code $responseCode"))
-            }
-        } catch (e: Exception) {
-            Result.failure(Exception("Network error: ${e.message}"))
-        }
-    }
-}
 
 @Composable
 private fun ServerInfoRow(label: String, value: String) {

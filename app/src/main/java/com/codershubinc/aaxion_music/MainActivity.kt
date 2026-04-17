@@ -17,6 +17,7 @@ import com.codershubinc.aaxion_music.ui.components.AaxionMusicWelcomeScreen
 import com.codershubinc.aaxion_music.ui.components.LoadingScreen
 import com.codershubinc.aaxion_music.ui.components.LoginScreen
 import com.codershubinc.aaxion_music.ui.components.music.MusicMainScreen
+import com.codershubinc.aaxion_music.ui.components.music.ProvideMusicController
 import com.codershubinc.aaxion_music.utils.AaxionServiceInfo
 import com.codershubinc.aaxion_music.utils.NetworkDiscovery
 import com.codershubinc.aaxion_music.utils.TokenManager
@@ -43,64 +44,80 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(colorScheme = AmoledDarkColorScheme) {
-                val context = LocalContext.current
-                val tokenManager = remember { TokenManager(context) }
-                
-                var currentScreen by remember {
-                    mutableStateOf(if (tokenManager.isLoggedIn()) Screen.MainApp else Screen.Loading)
-                }
-                var discoveredService by remember { mutableStateOf<AaxionServiceInfo?>(null) }
-                
-                val discovery = remember { NetworkDiscovery(context) }
-
-                LaunchedEffect(Unit) {
-                    if (currentScreen == Screen.Loading) {
-                        discovery.discoverServices { service ->
-                            discoveredService = service
-                        }
-                        delay(400)
-                        currentScreen = Screen.Welcome
+                ProvideMusicController {
+                    val context = LocalContext.current
+                    val tokenManager = remember { TokenManager(context) }
+                    
+                    var currentScreen by remember {
+                        mutableStateOf(Screen.Loading)
                     }
-                }
+                    var discoveredService by remember { mutableStateOf<AaxionServiceInfo?>(null) }
+                    var initialCheckDone by remember { mutableStateOf(false) }
+                    
+                    val discovery = remember { NetworkDiscovery(context) }
 
-                DisposableEffect(Unit) {
-                    onDispose {
-                        if (currentScreen != Screen.MainApp) {
-                            discovery.stopDiscovery()
+                    LaunchedEffect(currentScreen) {
+                        if (currentScreen == Screen.Loading) {
+                            discoveredService = null
+                            discovery.discoverServices { service ->
+                                discoveredService = service
+                            }
+                            delay(2000)
+                            if (!initialCheckDone) {
+                                initialCheckDone = true
+                                currentScreen = if (tokenManager.isLoggedIn()) Screen.MainApp else Screen.Welcome
+                            } else {
+                                currentScreen = if (tokenManager.isLoggedIn()) Screen.MainApp else Screen.Login
+                            }
                         }
                     }
-                }
 
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    when (currentScreen) {
-                        Screen.Loading -> {
-                            LoadingScreen()
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            if (currentScreen != Screen.MainApp) {
+                                discovery.stopDiscovery()
+                            }
                         }
-                        Screen.Welcome -> {
-                            AaxionMusicWelcomeScreen(
-                                onGetStartedClick = {
-                                    currentScreen = Screen.Login
-                                }
-                            )
-                        }
-                        Screen.Login -> {
-                            LoginScreen(
-                                serverInfo = discoveredService,
-                                onLoginSuccess = {
-                                    currentScreen = Screen.MainApp
-                                }
-                            )
-                        }
-                        Screen.MainApp -> {
-                            MusicMainScreen(
-                                onLogout = {
-                                    tokenManager.clearToken()
-                                    currentScreen = Screen.Welcome
-                                }
-                            )
+                    }
+
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        when (currentScreen) {
+                            Screen.Loading -> {
+                                LoadingScreen()
+                            }
+                            Screen.Welcome -> {
+                                AaxionMusicWelcomeScreen(
+                                    onGetStartedClick = {
+                                        currentScreen = Screen.Login
+                                    }
+                                )
+                            }
+                            Screen.Login -> {
+                                LoginScreen(
+                                    serverInfo = discoveredService,
+                                    onLoginSuccess = {
+                                        currentScreen = Screen.MainApp
+                                    },
+                                    onRetryDiscovery = {
+                                        currentScreen = Screen.Loading
+                                    }
+                                )
+                            }
+                            Screen.MainApp -> {
+                                MusicMainScreen(
+                                    serverInfo = discoveredService,
+                                    onLogout = {
+                                        tokenManager.clearToken()
+                                        currentScreen = Screen.Welcome
+                                    },
+                                    onRetryDiscovery = {
+                                        currentScreen = Screen.Loading
+                                    }
+                                )
+                            }
                         }
                     }
                 }

@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import com.codershubinc.aaxion_music.utils.AaxionServiceInfo
+import androidx.compose.material.icons.filled.Warning
 
 val AmoledBlack = Color(0xFF000000)
 val Zinc900 = Color(0xFF18181B)
@@ -25,7 +27,48 @@ val Zinc400 = Color(0xFFA1A1AA)
 val CyanAccent = Color(0xFF00E5FF)
 
 @Composable
-fun MusicMainScreen(onLogout: () -> Unit = {}) {
+fun MusicMainScreen(
+    serverInfo: AaxionServiceInfo?,
+    onLogout: () -> Unit = {},
+    onRetryDiscovery: () -> Unit = {}
+) {
+    if (serverInfo == null || serverInfo.host.isBlank()) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(AmoledBlack),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Warning",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(48.dp).padding(bottom = 16.dp)
+                )
+                Text(
+                    "Server Disconnected",
+                    color = Color.White,
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onRetryDiscovery,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CyanAccent,
+                        contentColor = Color.Black
+                    ),
+                    shape = MaterialTheme.shapes.extraLarge
+                ) {
+                    Text("Retry Discovery")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                TextButton(onClick = onLogout) {
+                    Text("Logout", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+        return
+    }
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
