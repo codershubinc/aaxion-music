@@ -33,8 +33,7 @@ class MusicController(context: Context) {
         private set
 
     private var currentPlaylist: List<MusicTrack> = emptyList()
-    private var serverHost: String = ""
-    private var serverPort: Int = 0
+    private var serverUrl: String = ""
     private var token: String? = null
 
     init {
@@ -93,16 +92,17 @@ class MusicController(context: Context) {
         }, MoreExecutors.directExecutor())
     }
 
-    fun playTrack(track: MusicTrack, playlist: List<MusicTrack>, serverHost: String, serverPort: Int, token: String?) {
+    fun playTrack(track: MusicTrack, playlist: List<MusicTrack>, serverUrl: String, token: String?) {
         this.currentTrack = track
         this.currentPlaylist = playlist
-        this.serverHost = serverHost
-        this.serverPort = serverPort
+        this.serverUrl = serverUrl
         this.token = token
 
         val mediaItems = playlist.map { item ->
-            val url = "http://$serverHost:$serverPort/music/stream?id=${item.id}&tkn=$token"
-            val thumbUrl = "http://$serverHost:$serverPort/files/thumbnail?path=${URLEncoder.encode(item.imagePath, StandardCharsets.UTF_8.toString())}&tkn=$token"
+            val baseUrl = serverUrl.trimEnd('/')
+            val encodedToken = URLEncoder.encode(token ?: "", StandardCharsets.UTF_8.toString())
+            val url = "$baseUrl/music/stream?id=${item.id}&tkn=$encodedToken"
+            val thumbUrl = "$baseUrl/files/thumbnail?path=${URLEncoder.encode(item.imagePath, StandardCharsets.UTF_8.toString())}&tkn=$encodedToken"
             MediaItem.Builder()
                 .setMediaId(item.id.toString())
                 .setUri(url)
@@ -131,7 +131,7 @@ class MusicController(context: Context) {
             // Manual fallback if not using native playlist properly
             val currentIndex = currentPlaylist.indexOfFirst { it.id == currentTrack?.id }
             if (currentIndex != -1 && currentIndex < currentPlaylist.size - 1) {
-                playTrack(currentPlaylist[currentIndex + 1], currentPlaylist, serverHost, serverPort, token)
+                playTrack(currentPlaylist[currentIndex + 1], currentPlaylist, serverUrl, token)
             }
         }
     }
@@ -143,7 +143,7 @@ class MusicController(context: Context) {
             // Manual fallback
             val currentIndex = currentPlaylist.indexOfFirst { it.id == currentTrack?.id }
             if (currentIndex != -1 && currentIndex > 0) {
-                playTrack(currentPlaylist[currentIndex - 1], currentPlaylist, serverHost, serverPort, token)
+                playTrack(currentPlaylist[currentIndex - 1], currentPlaylist, serverUrl, token)
             }
         }
     }

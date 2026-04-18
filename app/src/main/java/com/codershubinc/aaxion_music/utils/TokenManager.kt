@@ -21,5 +21,21 @@ class TokenManager(context: Context) {
     fun isLoggedIn(): Boolean {
         return getToken() != null
     }
+
+    fun saveServerUrl(url: String) {
+        prefs.edit().putString("server_url", url).apply()
+    }
+
+    fun getServerUrl(): String? {
+        return prefs.getString("server_url", null)
+    }
+
+    fun saveConnectionMode(mode: String) {
+        prefs.edit().putString("connection_mode", mode).apply()
+    }
+
+    fun getConnectionMode(): String {
+        return prefs.getString("connection_mode", "Auto") ?: "Auto"
+    }
 }
 

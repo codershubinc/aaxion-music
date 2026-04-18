@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.codershubinc.aaxion_music.ui.components.AaxionMusicWelcomeScreen
 import com.codershubinc.aaxion_music.ui.components.LoadingScreen
 import com.codershubinc.aaxion_music.ui.components.LoginScreen
+import com.codershubinc.aaxion_music.ui.components.SettingsScreen
 import com.codershubinc.aaxion_music.ui.components.music.MusicMainScreen
 import com.codershubinc.aaxion_music.ui.components.music.ProvideMusicController
 import com.codershubinc.aaxion_music.utils.AaxionServiceInfo
@@ -33,9 +34,9 @@ val AmoledDarkColorScheme = darkColorScheme(
     onBackground = Color.White,
     onSurface = Color.White,
     onSurfaceVariant = Color(0xFFA1A1AA),
-    primary = Color(0xFF00E5FF),
+    primary = Color(0xFF34393A),
     onPrimary = Color.Black,
-    primaryContainer = Color(0xFF00E5FF),
+    primaryContainer = Color(0xFF334548),
     onPrimaryContainer = Color.Black,
     error = Color(0xFFEF4444),
     onError = Color.White,
@@ -126,7 +127,15 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onRetryDiscovery = {
                                         currentScreen = Screen.Loading
+                                    },
+                                    onOpenSettings = {
+                                        currentScreen = Screen.Settings
                                     }
+                                )
+                            }
+                            Screen.Settings -> {
+                                SettingsScreen(
+                                    onBack = { currentScreen = Screen.MainApp }
                                 )
                             }
                         }
@@ -138,5 +147,5 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class Screen {
-    Loading, Welcome, Login, MainApp
+    Loading, Welcome, Login, MainApp, Settings
 }

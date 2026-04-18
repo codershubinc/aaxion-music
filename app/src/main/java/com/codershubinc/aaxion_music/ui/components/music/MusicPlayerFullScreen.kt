@@ -16,11 +16,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 import com.codershubinc.aaxion_music.utils.AaxionServiceInfo
+import com.codershubinc.aaxion_music.utils.ServerSelector
+import com.codershubinc.aaxion_music.utils.rememberCurrentAudioDevice
 import com.codershubinc.aaxion_music.utils.music.MusicTrack
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -32,12 +35,17 @@ fun FullScreenPlayer(
     token: String?,
     onClose: () -> Unit
 ) {
+    val context = LocalContext.current
+    val serverSelector = remember { ServerSelector(context) }
     val musicController = LocalMusicController.current
     val currentTrack = musicController.currentTrack ?: return
 
-    val imageUrl = if (serverInfo != null && token != null) {
+    val activeUrl = serverSelector.getActiveServerUrl(serverInfo)
+
+    val imageUrl = if (activeUrl.isNotBlank() && token != null) {
         val encodedPath = URLEncoder.encode(currentTrack.imagePath, StandardCharsets.UTF_8.toString())
-        "http://${serverInfo.host}:${serverInfo.port}/files/view-image?path=$encodedPath&tkn=$token"
+        val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString())
+        "$activeUrl/files/view-image?path=$encodedPath&tkn=$encodedToken"
     } else null
 
     ModalBottomSheet(
@@ -117,7 +125,7 @@ fun FullScreenPlayer(
                         Spacer(modifier = Modifier.height(32.dp))
                         PlaybackControls(musicController)
                         Spacer(modifier = Modifier.height(32.dp))
-                        AdditionalInfo(currentTrack,)
+                        AdditionalInfo(currentTrack)
                         Spacer(modifier = Modifier.weight(0.8f))
                     }
                 }
@@ -247,6 +255,8 @@ private fun PlaybackControls(musicController: MusicController) {
 
 @Composable
 private fun AdditionalInfo(track: MusicTrack) {
+    val outputDevice = rememberCurrentAudioDevice()
+    
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -258,11 +268,35 @@ private fun AdditionalInfo(track: MusicTrack) {
                 color = Color(0xFFA1A1AA),
                 style = MaterialTheme.typography.bodyMedium
             )
+            
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
+                Icon(
+                    imageVector = when {
+                        outputDevice.contains("Bluetooth") -> Icons.Default.Bluetooth
+                        outputDevice.contains("Headphones") -> Icons.Default.Headphones
+                        else -> Icons.Default.Speaker
+                    },
+                    contentDescription = null,
+                    tint = Color(0xFF00E5FF).copy(alpha = 0.8f),
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Playing on $outputDevice",
+                    color = Color(0xFF00E5FF).copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+
             if (track.releaseYear > 0) {
                 Text(
                     text = "Released: ${track.releaseYear}",
                     color = Color(0xFF71717A), // Zinc500
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
         }

@@ -18,8 +18,8 @@ data class MusicTrack(
 )
 
 object FetchMusic {
-    suspend fun fetchAllMusic(host: String, port: Int, token: String?): Result<List<MusicTrack>> {
-        val url = "http://$host:$port/music/all"
+    suspend fun fetchAllMusic(baseUrl: String, token: String?): Result<List<MusicTrack>> {
+        val url = "${baseUrl.trimEnd('/')}/music/all"
         val result = HttpClient.get(url, token)
         
         return result.mapCatching { response ->

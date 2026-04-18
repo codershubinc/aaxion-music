@@ -59,8 +59,9 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
     implementation("io.coil-kt.coil3:coil-gif:3.1.0")
-    
-    implementation(libs.material)
+	implementation(libs.androidx.material3)
+	
+	implementation(libs.material)
     
     // Media3
     implementation(libs.androidx.media3.exoplayer)

@@ -16,12 +16,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil3.compose.SubcomposeAsyncImage
 import com.codershubinc.aaxion_music.utils.AaxionServiceInfo
+import com.codershubinc.aaxion_music.utils.ServerSelector
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -32,9 +34,13 @@ fun FloatingMusicIsland(
     token: String?,
     onExpand: () -> Unit
 ) {
+    val context = LocalContext.current
+    val serverSelector = remember { ServerSelector(context) }
     val musicController = LocalMusicController.current
     val currentTrack = musicController.currentTrack
     
+    val activeUrl = serverSelector.getActiveServerUrl(serverInfo)
+
     AnimatedVisibility(
         visible = currentTrack != null,
         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -70,9 +76,10 @@ fun FloatingMusicIsland(
                             .padding(horizontal = 12.dp)
                     ) {
                         // --- Album Art ---
-                        val imageUrl = if (serverInfo != null && token != null) {
+                        val imageUrl = if (activeUrl.isNotBlank() && token != null) {
                             val encodedPath = URLEncoder.encode(currentTrack.imagePath, StandardCharsets.UTF_8.toString())
-                            "http://${serverInfo.host}:${serverInfo.port}/files/thumbnail?path=$encodedPath&tkn=$token"
+                            val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString())
+                            "$activeUrl/files/thumbnail?path=$encodedPath&tkn=$encodedToken"
                         } else null
                         
                         SubcomposeAsyncImage(
