@@ -36,12 +36,11 @@ import com.codershubinc.aaxion_music.utils.music.FetchMusic
 import com.codershubinc.aaxion_music.utils.music.MusicTrack
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import com.codershubinc.aaxion_music.ui.components.SettingsScreen
 
 val AmoledBlack = Color(0xFF000000)
-val Zinc800 = Color(0xFF18181B) // Subsurface/Card color
+val Zinc800 = Color(0xFF18181B)
 val Zinc400 = Color(0xFFA1A1AA)
-val CyanAccent = Color(0xFF00E5FF)
+val CyanAccent = Color(0xFF404E50)
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
