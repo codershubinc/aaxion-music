@@ -8,9 +8,11 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.codershubinc.aaxion_music.AaxionMusicApplication
 import android.content.Intent
 import androidx.media3.common.Player
+import androidx.media3.common.util.Log
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import kotlin.math.log
 
 class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
@@ -30,6 +32,9 @@ class PlaybackService : MediaSessionService() {
                     .setDataSourceFactory(cacheDataSourceFactory)
             )
             .build()
+        
+        Log.d("PlaybackService", "ExoPlayer initialized with cache data source")
+       // Log.i("PlaybackService track uri is"  )
 
         mediaSession = MediaSession.Builder(this, player).build()
     }

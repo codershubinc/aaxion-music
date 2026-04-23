@@ -25,12 +25,9 @@ class ServerSelector(context: Context) {
         } else ""
 
         return when (mode) {
-            ConnectionMode.Auto -> {
-                // Prioritize Local, fallback to Remote
-	            localUrl.ifBlank { backupUrl }
-            }
             ConnectionMode.LocalOnly -> localUrl
             ConnectionMode.RemoteOnly -> backupUrl
+            ConnectionMode.Auto -> localUrl.ifBlank { backupUrl }
         }
     }
 

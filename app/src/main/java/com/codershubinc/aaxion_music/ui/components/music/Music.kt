@@ -1,6 +1,8 @@
 package com.codershubinc.aaxion_music.ui.components.music
 
 import android.annotation.SuppressLint
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,6 +38,7 @@ import com.codershubinc.aaxion_music.utils.music.FetchMusic
 import com.codershubinc.aaxion_music.utils.music.MusicTrack
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import kotlin.contracts.Effect
 
 val AmoledBlack = Color(0xFF000000)
 val Zinc800 = Color(0xFF18181B)
@@ -61,7 +64,14 @@ fun MusicMainScreen(
     var isPlayerExpanded by remember { mutableStateOf(false) }
 
     val activeUrl = serverSelector.getActiveServerUrl(serverInfo)
-
+    
+    LaunchedEffect(serverInfo) {
+        if (serverInfo == null && serverSelector.hasBackupUrlConfigured()) {
+            Toast.makeText(context, "Local server lost. Switching to remote...", Toast.LENGTH_SHORT)
+                .show()
+        }
+    }
+            
     LaunchedEffect(serverInfo, activeUrl, refreshTrigger) {
         if (activeUrl.isNotBlank()) {
             isLoading = true
@@ -310,6 +320,17 @@ fun MainMusicContent(
                         color = Zinc400,
                         style = MaterialTheme.typography.headlineSmall
                     )
+                    Button(
+                        modifier = Modifier.padding(top = 16.dp),
+                        onClick = onRefresh,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CyanAccent,
+                            contentColor = Color.Black
+                        ),
+                        shape = MaterialTheme.shapes.extraLarge
+                    ) {
+                        Text("Refresh")
+                    }
                 }
             } else {
                 LazyColumn(
@@ -341,6 +362,7 @@ fun MainMusicContent(
                     }
                     items(musicList) { track ->
                         val musicController = LocalMusicController.current
+                        
                         MusicTrackItem(track, serverUrl, token, onClick = {
                             musicController.playTrack(track, musicList, serverUrl, token)
                         })

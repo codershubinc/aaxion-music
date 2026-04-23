@@ -21,12 +21,19 @@ class NetworkDiscovery(context: Context) {
 
     private var discoveryListener: NsdManager.DiscoveryListener? = null
 
-    fun discoverServices(onServiceFound: (AaxionServiceInfo) -> Unit) {
+    fun discoverServices(
+        onServiceFound: (AaxionServiceInfo) -> Unit,
+        onDiscoveryStarted: () -> Unit = {},
+        onDiscoveryStopped: () -> Unit = {},
+        onDiscoveryLost: (String) -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
         stopDiscovery()
 
         discoveryListener = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(regType: String) {
                 Log.d("NSD", "Service discovery started")
+                onDiscoveryStarted()
             }
 
             override fun onServiceFound(service: NsdServiceInfo) {
@@ -35,6 +42,7 @@ class NetworkDiscovery(context: Context) {
                     nsdManager.resolveService(service, object : NsdManager.ResolveListener {
                         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
                             Log.e("NSD", "Resolve failed: $errorCode")
+                            onError("Failed to resolve service: $errorCode")
                         }
 
                         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
@@ -62,21 +70,26 @@ class NetworkDiscovery(context: Context) {
 
             override fun onServiceLost(service: NsdServiceInfo) {
                 Log.e("NSD", "service lost: $service")
+                onDiscoveryLost("Service lost: ${service.serviceName}")
             }
 
             override fun onDiscoveryStopped(serviceType: String) {
                 Log.i("NSD", "Discovery stopped: $serviceType")
+                onDiscoveryStopped()
             }
 
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
                 Log.e("NSD", "Discovery failed: Error code:$errorCode")
+                onError("Discovery failed to start: $errorCode")
                 nsdManager.stopServiceDiscovery(this)
             }
 
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
                 Log.e("NSD", "Discovery failed: Error code:$errorCode")
+                onError("Discovery failed to stop: $errorCode")
                 nsdManager.stopServiceDiscovery(this)
             }
+          
         }
 
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)

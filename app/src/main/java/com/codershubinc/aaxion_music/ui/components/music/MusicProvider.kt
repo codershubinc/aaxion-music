@@ -102,7 +102,7 @@ class MusicController(context: Context) {
             val baseUrl = serverUrl.trimEnd('/')
             val encodedToken = URLEncoder.encode(token ?: "", StandardCharsets.UTF_8.toString())
             val url = "$baseUrl/music/stream?id=${item.id}&tkn=$encodedToken"
-            val thumbUrl = "$baseUrl/files/thumbnail?path=${URLEncoder.encode(item.imagePath, StandardCharsets.UTF_8.toString())}&tkn=$encodedToken"
+            val thumbUrl = "$baseUrl/files/view-image?path=${URLEncoder.encode(item.imagePath, StandardCharsets.UTF_8.toString())}&tkn=$encodedToken"
             MediaItem.Builder()
                 .setMediaId(item.id.toString())
                 .setUri(url)

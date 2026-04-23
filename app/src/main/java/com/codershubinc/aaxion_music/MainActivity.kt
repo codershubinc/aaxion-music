@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import com.codershubinc.aaxion_music.ui.components.AaxionMusicWelcomeScreen
 import com.codershubinc.aaxion_music.ui.components.LoadingScreen
 import com.codershubinc.aaxion_music.ui.components.LoginScreen
@@ -71,10 +72,23 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(currentScreen) {
                         if (currentScreen == Screen.Loading) {
                             discoveredService = null
-                            discovery.discoverServices { service ->
-                                discoveredService = service
-                            }
-                            delay(200)
+                            discovery.discoverServices(
+                                onServiceFound = { service ->
+                                    discoveredService = service
+                                    Toast.makeText(context, "Server found: ${service.name}", Toast.LENGTH_SHORT).show()
+                                },
+                                onDiscoveryStarted = {
+                                    Toast.makeText(context, "Searching for servers...", Toast.LENGTH_SHORT).show()
+                                },
+                                onError = { error ->
+                                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                                },
+                                onDiscoveryLost = { serviceName ->
+                                    discoveredService = null
+                                    Toast.makeText(context, "Server lost: $serviceName", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                            delay(2000)
                             if (!initialCheckDone) {
                                 initialCheckDone = true
                                 currentScreen = if (tokenManager.isLoggedIn()) Screen.MainApp else Screen.Welcome
